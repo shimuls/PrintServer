@@ -17,7 +17,7 @@ namespace LocalServerInCsharp
             _httpListener.Start(); // start server (Run application as Administrator!)
             Console.WriteLine("Server started.");
             Thread _responseThread = new Thread(ResponseThread);
-            _responseThread.Start(); // start the response thread
+            _responseThread.Start(); // start the response thread 
         }
         static void ResponseThread()
         {
