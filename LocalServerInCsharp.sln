@@ -1,7 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalServerInCsharp", "LocalServerInCsharp\LocalServerInCsharp.csproj", "{99FAD1C1-4C51-42DA-8A8B-6C7E3B4F4DB3}"
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32002.261
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintServer", "LocalServerInCsharp\PrintServer.csproj", "{99FAD1C1-4C51-42DA-8A8B-6C7E3B4F4DB3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1034935C-09F2-4FA5-814B-3FAF23937BE5}
 	EndGlobalSection
 EndGlobal
