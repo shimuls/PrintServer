@@ -22,7 +22,5 @@ namespace PrintServer.Properties {
                 return defaultInstance;
             }
         }
-
-        public bool ShowMessage { get; internal set; }
     }
 }

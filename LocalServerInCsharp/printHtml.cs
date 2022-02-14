@@ -6,19 +6,22 @@ using System.Drawing;
 using System.Windows.Forms;
 using ESC_POS_USB_NET.Printer;
 using System.Threading;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace LocalServerInCsharp
 {
     class printHtml
     {
+
         public void PrintImageEsc()
         {
             string curDir = Directory.GetCurrentDirectory();
             PrinterSettings settings = new PrinterSettings();
             Console.WriteLine(settings.PrinterName);
 
-            Printer printer = new Printer(settings.PrinterName);
             Bitmap image = new Bitmap(Bitmap.FromFile(curDir+"\\data.jpg"));
+            Printer printer = new Printer(settings.PrinterName);
             printer.Image(image);
             printer.FullPaperCut();
             printer.PrintDocument();
@@ -34,6 +37,11 @@ namespace LocalServerInCsharp
         {
             var th = new Thread(() =>
             {
+                string curDir = Directory.GetCurrentDirectory();
+                //if (File.Exists(curDir + "\\data.jpg"))
+                //{
+                //    File.Delete(curDir + "\\data.jpg");
+                //}
                 var webBrowser = new WebBrowser();
                 webBrowser.ScrollBarsEnabled = true;
                 webBrowser.IsWebBrowserContextMenuEnabled = true;
@@ -41,8 +49,8 @@ namespace LocalServerInCsharp
 
                 webBrowser.DocumentCompleted += webBrowser_DocumentCompleted;
                 //webBrowser.DocumentText = source;
-                string curDir = Directory.GetCurrentDirectory();
                 webBrowser.Url = new Uri(String.Format("file:///{0}/data.html", curDir));
+                //webBrowser.Dispose();
 
                 Application.Run();
             });
@@ -51,10 +59,16 @@ namespace LocalServerInCsharp
         }
         static void webBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            string curDir = Directory.GetCurrentDirectory();
+            string curDir = "c:\\temp";
+
+            if (File.Exists(curDir + "\\data.jpg"))
+            {
+                File.Delete(curDir + "\\data.jpg");
+            }
 
             Console.WriteLine(curDir + "\\data.jpg");
             var webBrowser = (WebBrowser)sender;
+            
             webBrowser.Size = webBrowser.Document.Body.ScrollRectangle.Size;
             using (Bitmap bitmap =
                 new Bitmap(
@@ -68,10 +82,11 @@ namespace LocalServerInCsharp
                         .Rectangle(0, 0, bitmap.Width, bitmap.Height));
                 bitmap.Save(curDir+"\\data.jpg",
                     System.Drawing.Imaging.ImageFormat.Jpeg);
-                
-                printHtml ph = new printHtml();
-                ph.PrintImageEsc();
             }
+            webBrowser.Dispose();
+            //System.Threading.Thread.Sleep(1000);
+            printHtml ph = new printHtml();
+            ph.PrintImageEsc();
 
         }
 
@@ -79,14 +94,18 @@ namespace LocalServerInCsharp
         public void print_image_doc() {
             try
             {
-                PrintDocument printDoc = new PrintDocument();
-                printDoc.PrintPage += new PrintPageEventHandler(printDoc_Print);
-                printDoc.Print();
+                using (PrintDocument pd = new PrintDocument())
+                {
+                    pd.PrintPage += new PrintPageEventHandler(printDoc_Print);
+                    pd.PrintPage += (this.pd_PrintPage);
+                    pd.Print();
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
+            
 
         }
 
@@ -189,6 +208,118 @@ namespace LocalServerInCsharp
                 ev.HasMorePages = true;
             else
                 ev.HasMorePages = false;
+        }
+        public static string EncryptString(string plainText, byte[] key, byte[] iv)
+        {
+            // Instantiate a new Aes object to perform string symmetric encryption
+            Aes encryptor = Aes.Create();
+
+            encryptor.Mode = CipherMode.CBC;
+            //encryptor.KeySize = 256;
+            //encryptor.BlockSize = 128;
+            //encryptor.Padding = PaddingMode.Zeros;
+
+            // Set key and IV
+            encryptor.Key = key;
+            encryptor.IV = iv;
+
+            // Instantiate a new MemoryStream object to contain the encrypted bytes
+            MemoryStream memoryStream = new MemoryStream();
+
+            // Instantiate a new encryptor from our Aes object
+            ICryptoTransform aesEncryptor = encryptor.CreateEncryptor();
+
+            // Instantiate a new CryptoStream object to process the data and write it to the 
+            // memory stream
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, aesEncryptor, CryptoStreamMode.Write);
+
+            // Convert the plainText string into a byte array
+            byte[] plainBytes = Encoding.ASCII.GetBytes(plainText);
+
+            // Encrypt the input plaintext string
+            cryptoStream.Write(plainBytes, 0, plainBytes.Length);
+
+            // Complete the encryption process
+            cryptoStream.FlushFinalBlock();
+
+            // Convert the encrypted data from a MemoryStream to a byte array
+            byte[] cipherBytes = memoryStream.ToArray();
+
+            // Close both the MemoryStream and the CryptoStream
+            memoryStream.Close();
+            cryptoStream.Close();
+
+            // Convert the encrypted byte array to a base64 encoded string
+            string cipherText = Convert.ToBase64String(cipherBytes, 0, cipherBytes.Length);
+
+            // Return the encrypted data as a string
+            return cipherText;
+        }
+
+        public string DecryptString(string cipherText)
+        {
+
+            string password = "pos@keeper";
+
+            // Create sha256 hash
+            SHA256 mySHA256 = SHA256Managed.Create();
+            byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(password));
+
+            // Create secret IV
+            byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+
+            // Instantiate a new Aes object to perform string symmetric encryption
+            Aes encryptor = Aes.Create();
+
+            encryptor.Mode = CipherMode.CBC;
+            //encryptor.KeySize = 256;
+            //encryptor.BlockSize = 128;
+            //encryptor.Padding = PaddingMode.Zeros;
+
+            // Set key and IV
+            encryptor.Key = key;
+            encryptor.IV = iv;
+
+            // Instantiate a new MemoryStream object to contain the encrypted bytes
+            MemoryStream memoryStream = new MemoryStream();
+
+            // Instantiate a new encryptor from our Aes object
+            ICryptoTransform aesDecryptor = encryptor.CreateDecryptor();
+
+            // Instantiate a new CryptoStream object to process the data and write it to the 
+            // memory stream
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, aesDecryptor, CryptoStreamMode.Write);
+
+            // Will contain decrypted plaintext
+            string plainText = String.Empty;
+
+            try
+            {
+                // Convert the ciphertext string into a byte array
+                byte[] cipherBytes = Convert.FromBase64String(cipherText);
+
+                // Decrypt the input ciphertext string
+                cryptoStream.Write(cipherBytes, 0, cipherBytes.Length);
+
+                // Complete the decryption process
+                cryptoStream.FlushFinalBlock();
+
+                // Convert the decrypted data from a MemoryStream to a byte array
+                byte[] plainBytes = memoryStream.ToArray();
+
+                // Convert the decrypted byte array to string
+                plainText = Encoding.ASCII.GetString(plainBytes, 0, plainBytes.Length);
+            }
+            finally
+            {
+                // Close both the MemoryStream and the CryptoStream
+                memoryStream.Close();
+                cryptoStream.Close();
+            }
+
+            // Return the decrypted data as a string
+            return plainText;
         }
     }
 

@@ -31,6 +31,7 @@ namespace LocalServerInCsharp
         static IntPtr WinDesktop;
         static MenuItem HideMenu;
         static MenuItem RestoreMenu;
+        static MenuItem ResetMenu;
 
 
 
@@ -42,11 +43,13 @@ namespace LocalServerInCsharp
             notifyIcon.Visible = true;
 
             ContextMenu menu = new ContextMenu();
+            ResetMenu = new MenuItem("Restart", new EventHandler(AppReset));
             HideMenu = new MenuItem("Hide", new EventHandler(Minimize_Click));
             RestoreMenu = new MenuItem("Restore", new EventHandler(Maximize_Click));
 
             menu.MenuItems.Add(RestoreMenu);
             menu.MenuItems.Add(HideMenu);
+            menu.MenuItems.Add(ResetMenu);
             menu.MenuItems.Add(new MenuItem("Exit", new EventHandler(CleanExit)));
 
             notifyIcon.ContextMenu = menu;
@@ -62,22 +65,28 @@ namespace LocalServerInCsharp
 
             //Hide the Window
             ResizeWindow(false);
-            
 
-            Console.WriteLine("Starting server...");
-            _httpListener.Prefixes.Add("http://localhost:9000/"); // add prefix "http://localhost:5000/"
-            _httpListener.Start(); // start server (Run application as Administrator!)
-            Console.WriteLine("Server started.");
-            Thread _responseThread = new Thread(ResponseThread);
-            _responseThread.SetApartmentState(ApartmentState.STA);
-            _responseThread.Start(); // start the response thread
-            
-            Application.Run();
+            try
+            {   // Server operation
+                Console.WriteLine("Starting server...");
+                _httpListener.Prefixes.Add("http://localhost:9000/api/");
+                _httpListener.Start(); // start server (Run application as Administrator!)
+                Console.WriteLine("Server started.");
+                Thread _responseThread = new Thread(ResponseThread);
+                _responseThread.SetApartmentState(ApartmentState.STA);
+                _responseThread.Start(); // start the response thread
+
+                Application.Run();
+            }
+            catch(Exception e) {
+                Console.WriteLine(e.ToString() );    
+            }
         }
         static void ResponseThread()
         {
             while (true)
             {
+
                 HttpListenerContext context = _httpListener.GetContext(); // get a context
                 HttpListenerRequest request = context.Request;
                 string documentContents;
@@ -88,12 +97,44 @@ namespace LocalServerInCsharp
                         documentContents = readStream.ReadToEnd();
                     }
                 }
-                //Console.WriteLine($"Recived request for {request.Url}");
-                File.WriteAllText("data.html", documentContents);
-                //Console.WriteLine(documentContents);
-                Console.WriteLine("Printing...");
                 printHtml phtml = new printHtml();
-                phtml.htmlToImage();
+                try
+                {
+                    documentContents = phtml.DecryptString(documentContents);
+                }
+                catch
+                {
+                    Console.WriteLine("Encryption error");
+                    documentContents = "";
+                }
+                finally {
+
+                    try
+                    {
+                        //Console.WriteLine(documentContents);
+                        //Console.WriteLine($"Recived request for {request.Url}");
+
+                        if (documentContents != "")
+                        {
+                            File.WriteAllText("data.html", documentContents);
+                            Console.WriteLine("Printing...");
+                            System.Threading.Thread.Sleep(1000);
+                            phtml.htmlToImage();
+                            //System.Threading.Thread.Sleep(1000);
+                            //Application.Restart();
+
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Print Error. Please check printer");
+                    }
+
+                }
+
+               
+                
+                
 
                 // Now, you'll find the request URL in context.Request.Url
                 byte[] _responseArray = Encoding.UTF8.GetBytes("<html><head><title>Localhost server -- port 9000</title></head>" + 
@@ -106,7 +147,7 @@ namespace LocalServerInCsharp
         }
         static void Run()
         {
-            Console.WriteLine("Listening to messages");
+            Console.WriteLine("Select ESC Printer.");
 
             while (true)
             {
@@ -120,6 +161,10 @@ namespace LocalServerInCsharp
             notifyIcon.Visible = false;
             Application.Exit();
             Environment.Exit(1);
+        }        
+        private static void AppReset(object sender, EventArgs e)
+        {
+            Application.Restart();
         }
 
 

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("LocalServerPrint")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("PrintServer")]
+[assembly: AssemblyDescription("Local server for direct print.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("ThoSo")]
-[assembly: AssemblyProduct("LocalServerPrint")]
-[assembly: AssemblyCopyright("Copyright © Saif 2012")]
+[assembly: AssemblyCompany("IT Advisor")]
+[assembly: AssemblyProduct("Escprint Server")]
+[assembly: AssemblyCopyright("Copyright © Saif 2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
